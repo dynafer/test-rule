@@ -1,0 +1,59 @@
+name: Format TS
+
+on:
+  push:
+    paths: &ts_paths
+      - "**/*.ts"
+      - "**/*.tsx"
+      - "**/*.js"
+      - "**/*.cjs"
+      - "**/package.json"
+      - "**/tsconfig.json"
+      - "**/tsconfig.*.json"
+      - "**/yarn.lock"
+      - ".github/workflows/lint-ts.yaml"
+  pull_request:
+    paths: *ts_paths
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  run-ts-formatters:
+    name: Run Formatters
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Cache vvvv cache
+        uses: actions/cache@v4
+        with:
+          path: src/vvvv/.yarn/cache
+          key: ${{ runner.os }}-yarncache-vvvv-${{ hashFiles('src/vvvv/yarn.lock') }}
+          restore-keys: ${{ runner.os }}-yarncache-vvvv-
+      - name: Cache qwer cache
+        uses: actions/cache@v4
+        with:
+          path: src/qwer/.yarn/cache
+          key: ${{ runner.os }}-yarncache-qwer-${{ hashFiles('src/qwer/yarn.lock') }}
+          restore-keys: ${{ runner.os }}-yarncache-qwer-
+      - name: Install deps (vvvv)
+        working-directory: src/vvvv
+        run: yarn install --immutable
+      - name: Install deps (qwer)
+        working-directory: src/qwer
+        run: yarn install --immutable
+      - name: Run vvvv Formatter
+        working-directory: src/vvvv
+        run: yarn run format
+      - name: Run qwer Formatter
+        working-directory: src/qwer
+        run: yarn run format
